@@ -30,7 +30,7 @@ resource "bunnynet_compute_container_app" "app_bom" {
   regions_required = ["SYD"]
 
   container {
-    name            = "app"
+    name            = "bom-app"
     image_registry  = bunnynet_compute_container_imageregistry.github.id
     image_namespace = "paimoe"
     image_name      = "bom"

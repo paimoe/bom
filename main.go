@@ -20,10 +20,6 @@ func lookupEnv(key string) (string, bool) {
 	return os.LookupEnv(key)
 }
 
-var Locations map[string]string
-var Stations map[string]map[string]int
-var PostCodes map[int]string
-
 var cache *bigcache.BigCache
 
 // Port is now configured using the PORT environment variable, falls back to 8190 if not set
@@ -37,49 +33,16 @@ func getPort() int {
 	return port
 }
 
-// location shit cause idk how to import
-func searchLocation(label string) string {
-	return Locations[label]
-}
-
-func map_location(x, y int) map[string]int {
-	innerMap := make(map[string]int)
-	innerMap["x"] = x
-	innerMap["y"] = y
-	return innerMap
-}
-
-func init_locations() {
-	Locations = make(map[string]string)
-	Locations["Perth"] = "bwa_pt053"
-	Locations["Sydney"] = "bnsw_pt131"
-	Locations["Darwin"] = "bnt_pt001"
-	Locations["Melbourne"] = "bvic_pt042"
-	Locations["Brisbane"] = "bqld_pt001"
-	Locations["Adelaide"] = "bsa_pt001"
-	Locations["Hobart"] = "btas_pt021"
-	Locations["Canberra"] = "bnsw_pt027"
-
-	// These are hardcoded from https://api.bom.gov.au/apikey/v1/locations/places/details/place/btas_pt021?filter=nearby_type%3Abom_stn&radius=100000
-	// where btas_pt021 is from above
-	// This file will have a place.locationHierarchy.nearest.gridcells.forecast with an x and y, ie Hobart is x=593, y=42
-	// This is passed into https://api.bom.gov.au/apikey/v1/forecasts/daily/{ x }/{ y }?timezone=Australia/{ tz }
-	// which has fcst.daily.[0].atm.surf_air.temp_max_cel and temp_min_cel
-	Stations = make(map[string]map[string]int)
-	Stations["Perth"] = map_location(65, 262)
-}
-
-func getAPIResponse(url string) (*Response, error) {
+func getAPIResponse(url string, dest interface{}) (error, bool) {
 	cache_key := url
 	// Check cache first
 	entry, err := cache.Get(cache_key)
 	if err == nil {
 		// Cache hit
 		fmt.Println("Cache hit for", cache_key)
-		var cachedResponse Response
-		err = json.Unmarshal(entry, &cachedResponse)
+		err = json.Unmarshal(entry, dest)
 		if err == nil {
-			return &cachedResponse, nil
+			return nil, true
 		}
 	}
 
@@ -104,44 +67,33 @@ func getAPIResponse(url string) (*Response, error) {
 	fmt.Println("Making request to:", url)
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to make get request: %v", err)
+		return fmt.Errorf("failed to make get request: %v", err), false
 	}
 	defer resp.Body.Close()
 
-	// bodyBytes, err := ioutil.ReadAll(resp.Body)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("failed to read body: %v", err)
-	// }
-
-	// // Print the raw string
-	// bodyString := string(bodyBytes)
-	// fmt.Println(bodyString)
-
-	var result Response
 	decoder := json.NewDecoder(resp.Body)
 	decoder.DisallowUnknownFields() // optional but useful
-	err = decoder.Decode(&result)
-
+	err = decoder.Decode(dest)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode json: %v", err)
+		return fmt.Errorf("failed to decode json: %v", err), false
 	}
 
 	// Store in cache
-	responseBytes, err := json.Marshal(result)
+	responseBytes, err := json.Marshal(dest)
 	if err == nil {
 		cache.Set(cache_key, responseBytes)
 	}
 
-	return &result, nil
+	return nil, false
 }
 
 func main() {
 	// we want to listen to requests and respond with either cached
 	// bom data, or update the cache and return.
-	init_locations()
+	InitLocations()
 
 	// Cache
-	cache, _ = bigcache.New(context.Background(), bigcache.DefaultConfig(60*time.Minute))
+	cache, _ = bigcache.New(context.Background(), bigcache.DefaultConfig(20*time.Minute))
 
 	r := mux.NewRouter()
 	r.HandleFunc("/{location}", LocationHandler)
@@ -165,30 +117,67 @@ func LocationHandler(w http.ResponseWriter, r *http.Request) {
 		// is by postcode. Pick a useful default like 6164 = Cockburn Central
 	} else {
 		// Match by location. Check in Locations list
-		location_code := searchLocation(loc)
-		if location_code == "" {
+		station_coords, ok := SearchLocation(loc)
+		if !ok {
 			w.WriteHeader(http.StatusNotFound)
-			fmt.Fprintf(w, "404 Location not found: %s", loc)
+			fmt.Fprintf(w, "404 Location not found: %s", loc) // Maybe log it a bit
 			// TODO try these similar names
 			return
 		}
 
 		// Get from api (no cache yet)
 		// Step 1. Get nearest weather station
-		station_coords := Stations[loc]
-		url := fmt.Sprintf("https://api.bom.gov.au/apikey/v1/forecasts/daily/%d/%d?timezone=Australia/Perth", station_coords["x"], station_coords["y"])
+		url_fcast := fmt.Sprintf("https://api.bom.gov.au/apikey/v1/forecasts/daily/%d/%d?timezone=Australia/Perth", station_coords["x"], station_coords["y"])
+		url_now := fmt.Sprintf("https://api.bom.gov.au/apikey/v1/observations/latest/%d/atm/surf_air?include_qc_results=false", station_coords["station_num"])
 
-		response, err := getAPIResponse(url)
+		var response_now ResponseNow
+		err, cached_now := getAPIResponse(url_now, &response_now)
 		if err != nil {
-			fmt.Println("Error getting API response:", err)
+			fmt.Println("Error getting API Now response:", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
 
-		fmt.Fprintf(w, "API Response: %+v", response)
+		var response_fcast ResponseFcast
+		err, cached_fcast := getAPIResponse(url_fcast, &response_fcast)
+		if err != nil {
+			fmt.Println("Error getting API Forecast response:", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		// fmt.Fprintf(w, "Temperature: %f", *response_fcast.Fcst.Daily[1].Atm.SurfAir.TempMaxCel)
+		// fmt.Fprintf(w, "API Response: %+v", response_fcast)
+		// fmt.Fprintf(w, "API Response: %+v", response_now)
+
+		tpl_data := PlaceTemplateData{
+			Location:  "Perth",
+			TempNow:   response_now.Obs.Temp.DryBulb1MinCel,
+			FeelsLike: response_now.Obs.Temp.Apparent1MinCel,
+			TodayHigh: response_now.Obs.Temp.DryBulbMaxCel,
+			TodayLow:  response_now.Obs.Temp.DryBulbMinCel,
+			IsCached:  cached_now && cached_fcast,
+		}
+		t, err := template.ParseFiles("static/place.html")
+		if err != nil {
+			http.Error(w, "Internal Server Error: loading template", http.StatusInternalServerError)
+			fmt.Println("Template error:", err)
+			return
+		}
+		t.Execute(w, tpl_data)
 	}
 }
 
-type TemplateData struct {
+type HomeTemplateData struct {
 	Capitals []string
+}
+type PlaceTemplateData struct {
+	Location  string
+	TempNow   float64
+	FeelsLike float64
+	TodayHigh float64
+	TodayLow  float64
+	IsCached  bool
 }
 
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
@@ -200,7 +189,7 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 		location_keys = append(location_keys, k)
 	}
 
-	data := TemplateData{Capitals: location_keys}
+	data := HomeTemplateData{Capitals: location_keys}
 
 	t, _ := template.ParseFiles("static/index.html")
 	t.Execute(w, data)
