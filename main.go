@@ -1,20 +1,24 @@
 package main
 
 import (
-	//"os"
 	"context"
 	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/http"
+	"os"
 	"regexp"
+	"strconv"
 	"time"
 
-	"github.com/gorilla/mux"
-
-	// "io/ioutil"
 	"github.com/allegro/bigcache/v3"
+	"github.com/gorilla/mux"
 )
+
+// Helper for env var lookup, ensures compatibility with testing
+func lookupEnv(key string) (string, bool) {
+	return os.LookupEnv(key)
+}
 
 var Locations map[string]string
 var Stations map[string]map[string]int
@@ -22,7 +26,16 @@ var PostCodes map[int]string
 
 var cache *bigcache.BigCache
 
-const Port = 8190
+// Port is now configured using the PORT environment variable, falls back to 8190 if not set
+func getPort() int {
+	port := 8190
+	if val, found := lookupEnv("PORT"); found {
+		if parsed, err := strconv.Atoi(val); err == nil {
+			port = parsed
+		}
+	}
+	return port
+}
 
 // location shit cause idk how to import
 func searchLocation(label string) string {
@@ -137,8 +150,9 @@ func main() {
 	// Run server
 	http.Handle("/", r)
 
-	fmt.Printf("Starting on port %d", Port)
-	http.ListenAndServe(fmt.Sprintf(":%d", Port), nil)
+	port := getPort()
+	fmt.Printf("Starting on port %d\n", port)
+	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 }
 
 func LocationHandler(w http.ResponseWriter, r *http.Request) {
