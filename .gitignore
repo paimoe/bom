@@ -1,0 +1,5 @@
+# Go module cache (do not commit)
+pkg/
+
+bin/
+obj/
