@@ -1,6 +1,8 @@
 # Start from the official Go image for building your binary
 FROM golang:1.25.5 AS builder
 
+LABEL org.opencontainers.image.source=https://github.com/paimoe/bom
+
 WORKDIR /app
 
 # Copy go mod and sum files, then download dependencies (better cache)
