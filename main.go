@@ -87,6 +87,18 @@ func getAPIResponse(url string, dest interface{}) (error, bool) {
 	return nil, false
 }
 
+type HomeTemplateData struct {
+	Capitals []string
+}
+type PlaceTemplateData struct {
+	Location  string
+	TempNow   float64
+	FeelsLike float64
+	TodayHigh float64
+	TodayLow  float64
+	IsCached  bool
+}
+
 func main() {
 	// we want to listen to requests and respond with either cached
 	// bom data, or update the cache and return.
@@ -98,6 +110,10 @@ func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/{location}", LocationHandler)
 	r.HandleFunc("/", HomeHandler)
+
+	// Handle static css
+	fs := http.FileServer(http.Dir("./static/assets"))
+	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fs))
 
 	// Run server
 	http.Handle("/", r)
@@ -151,33 +167,21 @@ func LocationHandler(w http.ResponseWriter, r *http.Request) {
 		// fmt.Fprintf(w, "API Response: %+v", response_now)
 
 		tpl_data := PlaceTemplateData{
-			Location:  "Perth",
+			Location:  loc,
 			TempNow:   response_now.Obs.Temp.DryBulb1MinCel,
 			FeelsLike: response_now.Obs.Temp.Apparent1MinCel,
 			TodayHigh: response_now.Obs.Temp.DryBulbMaxCel,
 			TodayLow:  response_now.Obs.Temp.DryBulbMinCel,
 			IsCached:  cached_now && cached_fcast,
 		}
-		t, err := template.ParseFiles("static/place.html")
+		t, err := template.ParseFiles("static/_base.html", "static/place.html")
 		if err != nil {
 			http.Error(w, "Internal Server Error: loading template", http.StatusInternalServerError)
 			fmt.Println("Template error:", err)
 			return
 		}
-		t.Execute(w, tpl_data)
+		t.ExecuteTemplate(w, "base", tpl_data)
 	}
-}
-
-type HomeTemplateData struct {
-	Capitals []string
-}
-type PlaceTemplateData struct {
-	Location  string
-	TempNow   float64
-	FeelsLike float64
-	TodayHigh float64
-	TodayLow  float64
-	IsCached  bool
 }
 
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
@@ -191,6 +195,6 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 
 	data := HomeTemplateData{Capitals: location_keys}
 
-	t, _ := template.ParseFiles("static/index.html")
-	t.Execute(w, data)
+	t, _ := template.ParseFiles("static/_base.html", "static/index.html")
+	t.ExecuteTemplate(w, "base", data)
 }

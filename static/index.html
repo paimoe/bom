@@ -1,28 +1,30 @@
-<!doctype html>
-<html>
-    <head>
-    <title>SuperBom</title>
+{{ define "main" }}
+<div class="hero">
+    <h1>Weather</h1>
+</div>
 
-    </head>
-    <body>
-        <h1>Bom</h1>
-
-        <!-- <ul>
-            {{ range .Capitals }}
-            <li>{{ . }}</li>
-            {{ end }}
-        </ul> -->
-        <ul>
-            <a href="/Perth">Perth</a>
-            <a href="/Sydney">Sydney</a>
-            <a href="/Melbourne">Melbourne</a>
-            <a href="/Brisbane">Brisbane</a>
-            <a href="/Adelaide">Adelaide</a>
-            <a href="/Hobart">Hobart</a>
-            <a href="/Darwin">Darwin</a>
-            <a href="/Canberra">Canberra</a>
+<div class="row">
+    <div class="col-12">
+        <ul class="city-list">
+            <li><a href="/Perth">👑 Perth</a></li>
+            <li><a href="/Adelaide">Adelaide</a></li>
+            <li><a href="/Brisbane">Brisbane</a></li>
+            <li><a href="/Darwin">Darwin</a></li>
+            <li><a href="/Hobart">Hobart</a></li>
+            <li><a href="/Melbourne">Melbourne</a></li>
+            <li><a href="/Sydney">Sydney</a></li>
         </ul>
+    </div>
+</div>
 
-    </body>
+<hr />
 
-</html>
+<div class="row">
+    <div class="col-12">
+        <ul class="city-list">
+            <li><a href="/Goldcoast">Gold Coast</a></li>
+        </ul>
+    </div>
+</div>
+
+{{ end }}

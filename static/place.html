@@ -1,34 +1,51 @@
-<!doctype html>
-<html>
-    <head>
-        <title>{{ .Location }} - SuperBom</title>
-    </head>
-    <body>
-        <h1>{{ .Location }}</h1>
-
+{{ define "main" }}
+<div class="hero hero-bar">
+    <div>
+        <h1>{{ .Location }} &mdash; {{.TempNow}}&deg;</h1>
         {{ if .IsCached }}
-        <span>cached</span>
+        <span style="color: grey">[cached]</span>
         {{ else }}
-        <span style="color: green">fresh</span>
+        <span style="color: green; font-weight:bold;">fresh</span>
         {{ end }}
+    </div>
+    <a href="/" class="p-button--positive">&larr; Home</a>
+</div>
 
-        <ul>
-            <li>Temp Now: {{ .TempNow }}</li>
-            <li>Feels Like: {{ .FeelsLike }}</li>
-            <li>Today High: {{ .TodayHigh }}</li>
-            <li>Today Low: {{ .TodayLow }}</li>
-        </ul>
+<div class="temperatures">
+<table>
+    <tr>
+        <td>Now</td>
+        <td>{{ .TempNow }}</td>
+    </tr>
+    <tr>
+        <td>Feels Like</td>
+        <td>{{ .FeelsLike }}</td>
+    </tr>
+    <tr>
+        <td>Today High</td>
+        <td>{{ .TodayHigh }}</td>
+    </tr>
+    <tr>
+        <td>Today Low</td>
+        <td>{{ .TodayLow }}</td>
+    </tr>
+</table>
+</div>
 
-        <h2>Other places</h2>
-        <ul>
-            <a href="/Perth">Perth</a>
-            <a href="/Sydney">Sydney</a>
-            <a href="/Melbourne">Melbourne</a>
-            <a href="/Brisbane">Brisbane</a>
-            <a href="/Adelaide">Adelaide</a>
-            <a href="/Hobart">Hobart</a>
-            <a href="/Darwin">Darwin</a>
-            <a href="/Canberra">Canberra</a>
+<h2>Other Cities</h2>
+
+<div class="row">
+    <div class="col-12">
+        <ul class="city-list">
+            <li><a href="/Perth">👑 Perth</a></li>
+            <li><a href="/Adelaide">Adelaide</a></li>
+            <li><a href="/Brisbane">Brisbane</a></li>
+            <li><a href="/Darwin">Darwin</a></li>
+            <li><a href="/Hobart">Hobart</a></li>
+            <li><a href="/Melbourne">Melbourne</a></li>
+            <li><a href="/Sydney">Sydney</a></li>
         </ul>
-    </body>
-</html>
+    </div>
+</div>
+
+{{ end }}
