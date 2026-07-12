@@ -133,7 +133,7 @@ func LocationHandler(w http.ResponseWriter, r *http.Request) {
 		// is by postcode. Pick a useful default like 6164 = Cockburn Central
 	} else {
 		// Match by location. Check in Locations list
-		station_coords, ok := SearchLocation(loc)
+		location, ok := SearchLocation(loc)
 		if !ok {
 			w.WriteHeader(http.StatusNotFound)
 			fmt.Fprintf(w, "404 Location not found: %s", loc) // Maybe log it a bit
@@ -143,8 +143,8 @@ func LocationHandler(w http.ResponseWriter, r *http.Request) {
 
 		// Get from api (no cache yet)
 		// Step 1. Get nearest weather station
-		url_fcast := fmt.Sprintf("https://api.bom.gov.au/apikey/v1/forecasts/daily/%d/%d?timezone=Australia/Perth", station_coords["x"], station_coords["y"])
-		url_now := fmt.Sprintf("https://api.bom.gov.au/apikey/v1/observations/latest/%d/atm/surf_air?include_qc_results=false", station_coords["station_num"])
+		url_fcast := fmt.Sprintf("https://api.bom.gov.au/apikey/v1/forecasts/daily/%d/%d?timezone=Australia/Perth", location.X, location.Y)
+		url_now := fmt.Sprintf("https://api.bom.gov.au/apikey/v1/observations/latest/%d/atm/surf_air?include_qc_results=false", location.StationNum)
 
 		var response_now ResponseNow
 		err, cached_now := getAPIResponse(url_now, &response_now)
@@ -167,7 +167,7 @@ func LocationHandler(w http.ResponseWriter, r *http.Request) {
 		// fmt.Fprintf(w, "API Response: %+v", response_now)
 
 		tpl_data := PlaceTemplateData{
-			Location:  loc,
+			Location:  location.Label,
 			TempNow:   response_now.Obs.Temp.DryBulb1MinCel,
 			FeelsLike: response_now.Obs.Temp.Apparent1MinCel,
 			TodayHigh: response_now.Obs.Temp.DryBulbMaxCel,
