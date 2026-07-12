@@ -39,4 +39,10 @@ func InitLocations() {
 	Stations = make(map[string]Location)
 	Stations["perth"] = Location{Label: "Perth", X: 65, Y: 262, StationNum: 9225}
 	Stations["sydney"] = Location{Label: "Sydney", X: 658, Y: 223, StationNum: 66214}
+	Stations["darwin"] = Location{Label: "Darwin", X: 316, Y: 652, StationNum: 14318}
+	Stations["melbourne"] = Location{Label: "Melbourne", X: 553, Y: 143, StationNum: 86338}
+	Stations["brisbane"] = Location{Label: "Brisbane", X: 688, Y: 349, StationNum: 40211}
+	Stations["adelaide"] = Location{Label: "Adelaide", X: 445, Y: 201, StationNum: 23154}
+	Stations["hobart"] = Location{Label: "Hobart", X: 591, Y: 42, StationNum: 94087}
+	Stations["canberra"] = Location{Label: "Canberra", X: 624, Y: 194, StationNum: 70351}
 }
