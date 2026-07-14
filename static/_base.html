@@ -7,7 +7,7 @@
         <title>bom</title>
         <link
             rel="stylesheet"
-            href="https://assets.ubuntu.com/v1/vanilla_framework_version_4_38_0_min.css"
+            href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css"
         />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -18,21 +18,16 @@
         <link rel="stylesheet" href="/static/main.css" />
 
         <style>
-            html, body {
-                margin: 0;
-                height: 100%;
+            :root{
+                --blue: #001427ff;
+                --teal: #708d81ff;
+                --jasmine: #f4d58dff;
+                --ember: #bf0603ff;
+                --red: #8d0801ff;
             }
-            .l-docs {
-                min-height: 100vh;
-            }
-            @media (max-width: 1035px) {
-                .l-docs {
-                    display: flex;
-                    flex-direction: column;
-                }
-                .l-docs__main {
-                    flex: 1;
-                }
+            #topper {
+                height: 10px;
+                background: repeating-linear-gradient(to right,var(--blue) 0,var(--blue) 50px,var(--teal) 50px,var(--teal) 100px,var(--jasmine) 100px,var(--jasmine) 150px,var(--ember) 150px,var(--ember) 200px,var(--red) 200px,var(--red) 250px);
             }
             .city-list {
                 display: flex;
@@ -50,66 +45,27 @@
                 flex-wrap: wrap;
                 gap: 1rem;
             }
-            .hero-bar h1 {
-                margin: 0;
-            }
-            :root{
-            --blue: #001427ff;
-            --teal: #708d81ff;
-            --jasmine: #f4d58dff;
-            --ember: #bf0603ff;
-            --red: #8d0801ff;
-            }
-            #topper {
-                height: 10px;
-  background: repeating-linear-gradient(to right,var(--blue) 0,var(--blue) 50px,var(--teal) 50px,var(--teal) 100px,var(--jasmine) 100px,var(--jasmine) 150px,var(--ember) 150px,var(--ember) 200px,var(--red) 200px,var(--red) 250px);
-            }
-            .hero {
-                margin: 2em 0;
-            }
-            .hero h1 {
-                font-size: 300%;
-            }
-            h2 {
-                font-size: 200%;
-            }
-            .temperatures table tr td:first-child {
-                font-weight: bold;
-                width: 15%;
-            }
-            .site-footer {
-                background: #262626;
-                color: #fff;
-                padding: 1.5rem;
-                text-align: center;
-                grid-area: footer;
-                min-height: 200px;
-                line-height: 200px;
-            }
         </style>
     </head>
     <div id="topper"></div>
-    <body class="is-paper">
-        <div class="l-docs">
-            <div class="l-docs__header">
-                <header id="navigation" class="p-navigation is-dark">
-                    <div class="l-docs__subgrid">
-                        <div class="l-docs__main">
-                        </div>
-                    </div>
-                </header>
+    <body>
+        <nav class="navbar is-dark" role="navigation" aria-label="main navigation">
+            <div class="navbar-brand">
+                <a class="navbar-item" href="/">
+                    <strong>home</strong>
+                </a>
             </div>
+        </nav>
 
-            <main class="l-docs__main">
-                <div class="row">
-                    <div class="col-12">{{ template "main" .}}</div>
-                </div>
-            </main>
+        <section class="section">
+            <div class="container">
+                {{ template "main" .}}
+            </div>
+        </section>
 
-            <footer class="site-footer">
-                Cached for 20 minutes.
-            </footer>
-        </div>
+        <footer class="footer" style="background: #262626; color: #fff; padding: 1.5rem; text-align: center;">
+            Cached for 20 minutes.
+        </footer>
     </body>
 </html>
 
