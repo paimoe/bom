@@ -9,6 +9,8 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"maps"
+	"slices"
 	"time"
 
 	"github.com/allegro/bigcache/v3"
@@ -188,10 +190,7 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	// add list of locations to template NOT USED
-	location_keys := make([]string, 0, len(Locations))
-	for k := range Locations {
-		location_keys = append(location_keys, k)
-	}
+	location_keys := slices.Collect(maps.Keys(Locations))
 
 	data := HomeTemplateData{Capitals: location_keys}
 
